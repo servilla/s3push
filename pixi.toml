@@ -1,0 +1,21 @@
+[project]
+authors = ["Mark Servilla <mark.servilla@gmail.com>"]
+channels = ["conda-forge"]
+description = "Pushing data packages from block storage to AWS S3 object storage"
+name = "s3push"
+platforms = ["linux-64"]
+version = "0.0.1"
+
+[tasks]
+install = "pip install ."
+clean = "rm -rf .pixi"
+
+[dependencies]
+boto3 = ">=1.35.82,<2"
+click = ">=8.1.7,<9"
+daiquiri = ">=3.0.0,<4"
+sqlalchemy = ">=2.0.36,<3"
+pixi-pycharm = ">=0.0.8,<0.0.9"
+ruff = ">=0.8.3,<0.9"
+pytest = ">=8.3.4,<9"
+psycopg2 = ">=2.9.9,<3"
