@@ -29,3 +29,6 @@ class Config:
     # Push registry database file in project home directory
     PUSH_DB = (CWD / "push_db.sqlite").parent.parent.as_posix()
 
+    # AWS S3 bucket name
+    BUCKET = "BUCKET"
+
