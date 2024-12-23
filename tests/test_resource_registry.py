@@ -17,20 +17,15 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-import s3push.model.resource_registry as rr
-
-
-host = "localhost"
+import s3push.model.resource_registry as resource_registry
 
 
 def test_engine():
-    engine = rr.get_pasta_db_engine(host=host)
+    engine = resource_registry._get_pasta_db_engine()
     assert engine
 
 
-def test_session_query():
-    engine = rr.get_pasta_db_engine(host=host)
-    with Session(engine) as session:
-        resources = session.query(rr.ResourceRegistry).order_by(func.random()).limit(10)
-        for resource in resources:
-            assert resource
+def test_data_packages_query():
+    data_packages = resource_registry.get_data_packages()
+    for data_package in data_packages:
+        print(data_package.package_id, data_package.date_created, data_package.resource_type)

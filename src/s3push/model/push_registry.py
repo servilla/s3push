@@ -13,11 +13,14 @@
 :Created:
     12/17/24
 """
-from sqlalchemy import create_engine, Column, String, Integer, DateTime
-from sqlalchemy.orm import DeclarativeBase
+from datetime import datetime
+
+from sqlalchemy import create_engine, Engine, Column, String, Integer, DateTime
+from sqlalchemy.orm import DeclarativeBase, Session
 
 from s3push.config import Config
 import daiquiri
+
 
 logger = daiquiri.getLogger(__name__)
 
@@ -26,8 +29,8 @@ class Base(DeclarativeBase):
     pass
 
 
-class PushRegistry(Base):
-    __tablename__ = "push_registry"
+class ResourceRegistry(Base):
+    __tablename__ = "resource_registry"
 
     resource_id = Column(String, primary_key=True)
     package_id = Column(String, nullable=False)
@@ -40,6 +43,26 @@ class PushRegistry(Base):
     date_pushed = Column(DateTime, nullable=True)
 
 
-def get_push_db_engine(db_path: str = Config.PUSH_DB):
+class PackageRegistry(Base):
+    __tablename__ = "package_registry"
+
+    package_id = Column(String, primary_key=True)
+    date_created = Column(DateTime, nullable=False)
+    date_pushed = Column(DateTime, nullable=True)
+
+
+
+def _get_push_db_engine(db_path: str = Config.PUSH_DB) -> Engine:
     engine = create_engine("sqlite:///" + db_path)
     return engine
+
+
+def set_package(engine: Engine, package_id: str, date_created: datetime) -> None:
+    # engine = _get_push_db_engine()
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        package = PackageRegistry()
+        package.package_id = package_id
+        package.date_created = date_created
+        session.add(package)
+        session.commit()

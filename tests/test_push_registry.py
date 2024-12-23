@@ -30,12 +30,12 @@ def _clean_db():
 
 
 def test_engine():
-    engine = pr.get_push_db_engine(db_path=PUSH_DB)
+    engine = pr._get_push_db_engine(db_path=PUSH_DB)
     assert engine
 
 
 def test_push_registry_create():
-    engine = pr.get_push_db_engine(db_path=PUSH_DB)
+    engine = pr._get_push_db_engine(db_path=PUSH_DB)
     pr.Base.metadata.create_all(engine)
     assert Path(PUSH_DB).exists()
     _clean_db()

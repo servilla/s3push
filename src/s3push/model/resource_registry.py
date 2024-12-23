@@ -13,11 +13,13 @@
 :Created:
     12/17/24
 """
+from datetime import datetime
 import urllib.parse
+from typing import Any
 
 import daiquiri
-from sqlalchemy import create_engine, Column, String, Integer
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import create_engine, Column, String, Integer, DateTime
+from sqlalchemy.orm import DeclarativeBase, Session, Query
 
 from s3push.config import Config
 
@@ -40,8 +42,9 @@ class ResourceRegistry(Base):
     resource_size = Column(Integer)
     md5_checksum = Column(String)
     sha1_checksum = Column(String)
+    date_created = Column(DateTime)
 
-def get_pasta_db_engine(host: str):
+def _get_pasta_db_engine():
     db = (
         Config.DB_DRIVER
         + "://"
@@ -49,7 +52,7 @@ def get_pasta_db_engine(host: str):
         + ":"
         + urllib.parse.quote_plus(Config.DB_PW)
         + "@"
-        + host
+        + Config.HOST
         + ":"
         + Config.DB_PORT
         + "/"
@@ -58,3 +61,14 @@ def get_pasta_db_engine(host: str):
 
     engine = create_engine(db)
     return engine
+
+
+def get_data_packages(start_date: datetime = "2013-01-01T00:00:00Z") -> Query:
+    engine = _get_pasta_db_engine()
+    with Session(engine) as session:
+        resources = (
+            session.query(ResourceRegistry)
+            .filter(ResourceRegistry.date_created >= start_date)
+            .filter(ResourceRegistry.resource_type == "dataPackage")
+        )
+    return resources
