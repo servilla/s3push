@@ -121,29 +121,27 @@ def push(packages: tuple, dryrun: bool, ignore: str):
                         try:
                             s3_obj = s3_client.get_object_attributes(Bucket=Config.BUCKET, Key=key, ObjectAttributes=['Checksum', 'ObjectSize'])
                             logger.info(f"Resource {key} exists in S3")
-                            if sha1 != s3_obj['Checksum']['ChecksumSHA1']:
-                                logger.error(f"Resource {key} SHA1 checksum mismatch")
-                        except KeyError as e:
-                            msg = f"Resource {key} missing attribute ChecksumSHA1"
-                            logger.error(msg)
+                            try:
+                                if size != s3_obj['ObjectSize']:
+                                    logger.error(f"Resource {key} size mismatch")
+                            except KeyError as e:
+                                msg = f"Resource {key} missing attribute ObjectSize"
+                                logger.warning(msg)
+                            try:
+                                if sha1 != s3_obj['Checksum']['ChecksumSHA1']:
+                                    logger.error(f"Resource {key} SHA1 checksum mismatch")
+                            except KeyError as e:
+                                msg = f"Resource {key} missing attribute ChecksumSHA1"
+                                logger.warning(msg)
                         except s3_client.exceptions.NoSuchKey:
                             logging.info(f"Pushing {key} to S3")
-                            start_time = datetime.now()
-                            s3_client.upload_file(str(resource), Config.BUCKET, key, Config=s3_config)
-                            duration = datetime.now() - start_time
-                            f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
-                            # with open(resource, "rb") as data:
-                            #     if not dryrun:
-                            #         try:
-                            #             start_time = datetime.now()
-                            #             s3_resource.Bucket(Config.BUCKET).put_object(
-                            #                 Key=key,
-                            #                 ChecksumSHA1=sha1,
-                            #                 Body=data)
-                            #             duration = datetime.now() - start_time
-                            #             f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
-                            #         except botocore.exceptions.ClientError as e:
-                            #             logger.error(e)
+                            try:
+                                start_time = datetime.now()
+                                response = s3_client.upload_file(str(resource), Config.BUCKET, key, Config=s3_config)
+                                duration = datetime.now() - start_time
+                                f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
+                            except botocore.exceptions.ClientError as e:
+                                logger.error(e)
 
 
 if __name__ == "__main__":
