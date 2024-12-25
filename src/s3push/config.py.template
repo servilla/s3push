@@ -29,6 +29,9 @@ class Config:
     # Push registry database file in project home directory
     PUSH_DB = (CWD / "push_db.sqlite").parent.parent.as_posix()
 
+    # Root data package directory on host
+    ROOT = "DATASTORE_ROOT_DIR"
+
     # AWS S3 bucket name
     BUCKET = "BUCKET"
 
