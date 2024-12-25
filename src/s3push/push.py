@@ -120,6 +120,9 @@ def push(packages: tuple, dryrun: bool, ignore: str):
                             logger.info(f"Resource {key} exists in S3")
                             if sha1 != s3_obj['Checksum']['ChecksumSHA1']:
                                 logger.error(f"Resource {key} SHA1 checksum mismatch")
+                        except KeyError as e:
+                            msg = f"Resource {key} missing attribute ChecksumSHA1"
+                            logger.error(msg)
                         except s3_client.exceptions.NoSuchKey:
                             logging.info(f"Pushing {key} to S3")
                             with open(resource, "rb") as data:
