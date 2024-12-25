@@ -39,8 +39,8 @@ setup(
     packages=find_packages(where="src", include=["s3push"]),
     package_dir={"": "src"},
     include_package_data=True,
-    python_requires=" >= 3.11",
-    install_requires=[(
+    python_requires=" >= 3.13",
+    install_requires=[
         "boto3 >=1.35.82,<2",
         "click >=8.1.7,<9",
         "daiquiri >=3.0.0,<4",
@@ -50,7 +50,7 @@ setup(
         "psycopg2 >=2.9.9,<3",
         "pip >=24.3.1,<25",
         "setuptools >=75.6.0,<76",
-    )],
+    ],
     entry_points={"console_scripts": ["push=s3push.push:push"]},
     classifiers=["License :: OSI Approved :: Apache Software License",],
 )
