@@ -23,6 +23,7 @@ from pathlib import Path
 import re
 
 import boto3
+from boto3.s3.transfer import TransferConfig
 import botocore
 import click
 import daiquiri
@@ -78,6 +79,8 @@ def push(packages: tuple, dryrun: bool, ignore: str):
     """
     s3_resource = boto3.resource('s3')
     s3_client = boto3.client('s3')
+    GB = 1024 ** 3
+    s3_config = TransferConfig(multipart_threshold=5*GB)
 
     if ignore is not None:
         with open(ignore, "r") as f:
@@ -125,18 +128,22 @@ def push(packages: tuple, dryrun: bool, ignore: str):
                             logger.error(msg)
                         except s3_client.exceptions.NoSuchKey:
                             logging.info(f"Pushing {key} to S3")
-                            with open(resource, "rb") as data:
-                                if not dryrun:
-                                    try:
-                                        start_time = datetime.now()
-                                        s3_resource.Bucket(Config.BUCKET).put_object(
-                                            Key=key,
-                                            ChecksumSHA1=sha1,
-                                            Body=data)
-                                        duration = datetime.now() - start_time
-                                        f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
-                                    except botocore.exceptions.ClientError as e:
-                                        logger.error(e)
+                            start_time = datetime.now()
+                            s3_client.upload_file(str(resource), Config.BUCKET, key, Config=s3_config)
+                            duration = datetime.now() - start_time
+                            f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
+                            # with open(resource, "rb") as data:
+                            #     if not dryrun:
+                            #         try:
+                            #             start_time = datetime.now()
+                            #             s3_resource.Bucket(Config.BUCKET).put_object(
+                            #                 Key=key,
+                            #                 ChecksumSHA1=sha1,
+                            #                 Body=data)
+                            #             duration = datetime.now() - start_time
+                            #             f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
+                            #         except botocore.exceptions.ClientError as e:
+                            #             logger.error(e)
 
 
 if __name__ == "__main__":
