@@ -3,7 +3,7 @@ authors = ["Mark Servilla <mark.servilla@gmail.com>"]
 channels = ["conda-forge"]
 description = "Pushing data packages from block storage to AWS S3 object storage"
 name = "s3push"
-platforms = ["linux-64"]
+platforms = ["linux-64", "linux-aarch64"]
 version = "0.0.1"
 
 [tasks]
@@ -21,3 +21,4 @@ pytest = ">=8.3.4,<9"
 psycopg2 = ">=2.9.9,<3"
 pip = ">=24.3.1,<25"
 setuptools = ">=75.6.0,<76"
+botocore = ">=1.35.87,<2"
