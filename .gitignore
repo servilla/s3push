@@ -167,3 +167,5 @@ cython_debug/
 
 # Project
 config.py
+inventory.csv
+push_db.sqlite
