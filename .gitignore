@@ -163,9 +163,9 @@ cython_debug/
 
 # pixi environments
 .pixi
-*.egg-info
 
 # Project
 config.py
 inventory.csv
 push_db.sqlite
+*.egg-info
