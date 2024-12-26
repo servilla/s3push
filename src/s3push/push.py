@@ -66,14 +66,16 @@ def get_md5_checksum(filename) -> bytes:
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
+help_checksum = "Calculate and compare SHA1 checksums of data packages (slower)"
 dryrun_help = "Dry run, no data pushed to S3"
 ignore_help = "File containing List of data packages to ignore, one package identifier per line"
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("packages", type=str, nargs=-1)
+@click.option("--checksum", "-c", is_flag=True, default=False, help=help_checksum)
 @click.option("--dryrun", "-d", is_flag=True, default=False, help=dryrun_help)
 @click.option("--ignore", "-i", type=str, default=None, help=ignore_help)
-def push(packages: tuple, dryrun: bool, ignore: str):
+def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str):
     """
     Push data packages from a PASTA block storage file system to an AWS S3 bucket
     """
@@ -127,21 +129,23 @@ def push(packages: tuple, dryrun: bool, ignore: str):
                             except KeyError as e:
                                 msg = f"Resource {key} missing attribute ObjectSize"
                                 logger.warning(msg)
-                            try:
-                                if sha1 != s3_obj['Checksum']['ChecksumSHA1']:
-                                    logger.error(f"Resource {key} SHA1 checksum mismatch")
-                            except KeyError as e:
-                                msg = f"Resource {key} missing attribute ChecksumSHA1"
-                                logger.warning(msg)
+                            if checksum:
+                                try:
+                                    if sha1 != s3_obj['Checksum']['ChecksumSHA1']:
+                                        logger.error(f"Resource {key} SHA1 checksum mismatch")
+                                except KeyError as e:
+                                    msg = f"Resource {key} missing attribute ChecksumSHA1"
+                                    logger.warning(msg)
                         except s3_client.exceptions.NoSuchKey:
                             logging.info(f"Pushing {key} to S3")
-                            try:
-                                start_time = datetime.now()
-                                response = s3_client.upload_file(str(resource), Config.BUCKET, key, Config=s3_config)
-                                duration = datetime.now() - start_time
-                                f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
-                            except botocore.exceptions.ClientError as e:
-                                logger.error(e)
+                            if not dryrun:
+                                try:
+                                    start_time = datetime.now()
+                                    s3_client.upload_file(str(resource), Config.BUCKET, key, Config=s3_config)
+                                    duration = datetime.now() - start_time
+                                    f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
+                                except botocore.exceptions.ClientError as e:
+                                    logger.error(e)
 
 
 if __name__ == "__main__":
