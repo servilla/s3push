@@ -17,20 +17,9 @@ from pathlib import Path
 
 class Config:
 
-    CWD = Path(__file__).resolve().parent
-
-    # PASTA database connection information
-    DB_USER = "DB_USER"
-    DB_PW = "DB_PW"
-    DB_PORT = "DB_PORT"
-    DB_DB = "DB_DB"
-    DB_DRIVER = "postgresql+psycopg2"
-
-    # Push registry database file in project home directory
-    PUSH_DB = (CWD / "push_db.sqlite").parent.parent.as_posix()
-
-    # Root data package directory on host
-    ROOT = "DATASTORE_ROOT_DIR"
+    LOG_PATH = Path("LOG_PATH")
+    INVENTORY_PATH = Path("INVENTORY_PATH")
+    DATA_ROOT_PATH = Path("DATA_ROOT_PATH")
 
     # AWS S3 bucket name
     BUCKET = "BUCKET"

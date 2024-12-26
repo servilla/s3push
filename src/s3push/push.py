@@ -30,8 +30,8 @@ import daiquiri
 
 from s3push.config import Config
 
-CWD = Path(".").resolve()
-LOGFILE = CWD / "push.log"
+
+LOGFILE = Config.LOG_PATH / "push.log"
 daiquiri.setup(
     level=logging.INFO,
     outputs=(
@@ -81,7 +81,6 @@ def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str, pids: str):
     """
     Push data packages from a PASTA block storage file system to an AWS S3 bucket
     """
-    s3_resource = boto3.resource('s3')
     s3_client = boto3.client('s3')
     GB = 1024 ** 3
     s3_config = TransferConfig(multipart_threshold=5*GB)
@@ -93,7 +92,7 @@ def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str, pids: str):
     else:
         ignore_list = []
 
-    data_root = Path(Config.ROOT)
+    data_root = Path(Config.DATA_ROOT_PATH)
     if len(packages) == 0 and pids is None:
         while True:
             confirmation = input(f"Push all data packages in {data_root} to S3? ([y]/n)").lower()
@@ -111,7 +110,7 @@ def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str, pids: str):
         with open(pids, "r") as f:
             data_store = [(data_root / _.strip()) for _ in f.readlines()]
 
-    inventory = CWD / "inventory.csv"
+    inventory = Config.INVENTORY_PATH / "inventory.csv"
     if not Path(inventory).exists():
         with open(inventory, "w", encoding="utf-8") as f:
             f.write("package_id,resource,SHA1,size,duration,datetime\n")
@@ -127,6 +126,7 @@ def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str, pids: str):
                         key = f"{data_package.name}/{resource.name}"
                         logger.info(f"Processing {key}")
                         size = resource.stat().st_size
+                        sha1 = "None"
                         if checksum:
                             sha1 = base64.b64encode(get_sha1_checksum(resource)).decode('utf-8')
                         try:
