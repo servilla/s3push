@@ -69,13 +69,15 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 help_checksum = "Calculate and compare SHA1 checksums of data packages (slower)"
 dryrun_help = "Dry run, no data pushed to S3"
 ignore_help = "File containing List of data packages to ignore, one package identifier per line"
+pids_help ="File containing List of data packages to push, one package identifier per line"
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("packages", type=str, nargs=-1)
 @click.option("--checksum", "-c", is_flag=True, default=False, help=help_checksum)
 @click.option("--dryrun", "-d", is_flag=True, default=False, help=dryrun_help)
 @click.option("--ignore", "-i", type=str, default=None, help=ignore_help)
-def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str):
+@click.option("--pids", "-p", type=str, default=None, help=pids_help)
+def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str, pids: str):
     """
     Push data packages from a PASTA block storage file system to an AWS S3 bucket
     """
@@ -92,7 +94,7 @@ def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str):
         ignore_list = []
 
     data_root = Path(Config.ROOT)
-    if len(packages) == 0:
+    if len(packages) == 0 and pids is None:
         while True:
             confirmation = input(f"Push all data packages in {data_root} to S3? ([y]/n)").lower()
             if confirmation == "y" or confirmation == "":
@@ -100,8 +102,14 @@ def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str):
             else:
                 return
         data_store = data_root.iterdir()
-    else:
+    elif len(packages) != 0 and pids is not None:
+        logger.error("Cannot specify both packages and pids")
+        return 1
+    elif len(packages) != 0:
         data_store = [(data_root / package) for package in packages]
+    elif pids is not None and Path(pids).exists() and Path(pids).is_file():
+        with open(pids, "r") as f:
+            data_store = [(data_root / _.strip()) for _ in f.readlines()]
 
     inventory = CWD / "inventory.csv"
     if not Path(inventory).exists():
@@ -119,7 +127,8 @@ def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str):
                         key = f"{data_package.name}/{resource.name}"
                         logger.info(f"Processing {key}")
                         size = resource.stat().st_size
-                        sha1 = base64.b64encode(get_sha1_checksum(resource)).decode('utf-8')
+                        if checksum:
+                            sha1 = base64.b64encode(get_sha1_checksum(resource)).decode('utf-8')
                         try:
                             s3_obj = s3_client.get_object_attributes(Bucket=Config.BUCKET, Key=key, ObjectAttributes=['Checksum', 'ObjectSize'])
                             logger.info(f"Resource {key} exists in S3")
@@ -138,14 +147,14 @@ def push(packages: tuple, checksum: bool, dryrun: bool, ignore: str):
                                     logger.warning(msg)
                         except s3_client.exceptions.NoSuchKey:
                             logging.info(f"Pushing {key} to S3")
-                            if not dryrun:
-                                try:
-                                    start_time = datetime.now()
+                            try:
+                                start_time = datetime.now()
+                                if not dryrun:
                                     s3_client.upload_file(str(resource), Config.BUCKET, key, Config=s3_config)
-                                    duration = datetime.now() - start_time
-                                    f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
-                                except botocore.exceptions.ClientError as e:
-                                    logger.error(e)
+                                duration = datetime.now() - start_time
+                                f.write(f"{data_package.name},{key},{sha1},{size},{duration},{datetime.now()}\n")
+                            except botocore.exceptions.ClientError as e:
+                                logger.error(e)
 
 
 if __name__ == "__main__":
