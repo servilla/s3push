@@ -17,6 +17,7 @@ from pathlib import Path
 
 class Config:
 
+    # Default paths
     LOG_PATH = Path("LOG_PATH")
     INVENTORY_PATH = Path("INVENTORY_PATH")
     DATA_ROOT_PATH = Path("DATA_ROOT_PATH")
